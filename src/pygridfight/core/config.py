@@ -1,43 +1,61 @@
 """Configuration management for PyGridFight."""
 
-import os
 from functools import lru_cache
 from typing import List
 
 from pydantic import Field
 from pydantic_settings import BaseSettings
 
-
-class Settings(BaseSettings):
-    """Application settings."""
-
-    # Server configuration
-    host: str = Field(default="0.0.0.0", description="Host to bind the server to")
-    port: int = Field(default=8000, description="Port to bind the server to")
-    debug: bool = Field(default=False, description="Enable debug mode")
-
-    # CORS configuration
-    allowed_origins: List[str] = Field(
-        default=["http://localhost:3000", "http://127.0.0.1:3000"],
-        description="Allowed CORS origins"
-    )
-
-    # Game configuration
-    max_players_per_game: int = Field(default=4, description="Maximum players per game")
-    grid_size: int = Field(default=20, description="Default grid size")
-    game_timeout_seconds: int = Field(default=300, description="Game timeout in seconds")
-
-    # Logging configuration
-    log_level: str = Field(default="INFO", description="Logging level")
-    log_format: str = Field(default="json", description="Log format (json or console)")
+class GameSettings(BaseSettings):
+    """Game-related settings."""
+    grid_size: int = Field(default=8, description="Grid size for the battlefield")
+    max_players: int = Field(default=4, description="Maximum number of players")
+    max_avatars_per_player: int = Field(default=3, description="Max avatars per player")
+    avatar_cost: int = Field(default=5, description="Cost to deploy an avatar")
+    target_score: int = Field(default=20, description="Score needed to win")
+    max_turns: int = Field(default=50, description="Maximum number of turns per game")
 
     class Config:
-        """Pydantic configuration."""
         env_prefix = "PYGRIDFIGHT_"
         case_sensitive = False
 
+class ServerSettings(BaseSettings):
+    """Server and API related settings."""
+    host: str = Field(default="0.0.0.0", description="Host to bind the server to")
+    port: int = Field(default=8000, description="Port to bind the server to")
+    cors_origins: list[str] = Field(default_factory=lambda: ["*"], description="Allowed CORS origins")
+    log_level: str = Field(default="INFO", description="Logging level")
+
+    class Config:
+        env_prefix = "PYGRIDFIGHT_"
+        case_sensitive = False
 
 @lru_cache()
-def get_settings() -> Settings:
-    """Get cached application settings."""
-    return Settings()
+def get_game_settings() -> GameSettings:
+    """Get cached game settings."""
+    return GameSettings()
+
+@lru_cache()
+def get_server_settings() -> ServerSettings:
+    """Get cached server settings."""
+    return ServerSettings()
+def get_settings():
+    """[DEPRECATED] Compatibility shim. Use get_game_settings() or get_server_settings() instead."""
+    # Compose a dummy object with legacy attributes for backward compatibility
+    gs = get_game_settings()
+    ss = get_server_settings()
+    class LegacySettings:
+        # Server
+        host = ss.host
+        port = ss.port
+        log_level = ss.log_level
+        log_format = getattr(ss, "log_format", "json")
+        # CORS
+        allowed_origins = getattr(ss, "cors_origins", ["*"])
+        # Game
+        max_players_per_game = getattr(gs, "max_players", 4)
+        grid_size = gs.grid_size
+        game_timeout_seconds = 300  # Not present in new config, fallback
+        # Logging
+        debug = False
+    return LegacySettings()
