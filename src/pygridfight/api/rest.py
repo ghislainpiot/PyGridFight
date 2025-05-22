@@ -2,6 +2,7 @@
 
 from fastapi import APIRouter, HTTPException, status
 import structlog
+from fastapi.responses import JSONResponse
 
 from pygridfight.core.exceptions import GameError, PlayerError
 
@@ -10,10 +11,30 @@ logger = structlog.get_logger(__name__)
 router = APIRouter()
 
 
-@router.get("/health")
-async def health_check() -> dict:
-    """Health check endpoint."""
-    return {"status": "healthy", "service": "pygridfight"}
+@router.route("/health", methods=["GET", "OPTIONS"])
+async def health_check(request) -> JSONResponse:
+    """Health check endpoint with system/config info and timestamp."""
+    import platform
+    import time
+    from pygridfight.core.config import get_settings
+
+    settings = get_settings()
+    return JSONResponse(content={
+        "status": "healthy",
+        "service": "pygridfight",
+        "timestamp": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+        "system": {
+            "python_version": platform.python_version(),
+            "platform": platform.system(),
+            "release": platform.release(),
+        },
+        "config": {
+            "host": settings.host,
+            "port": settings.port,
+            "grid_size": getattr(settings, "grid_size", None),
+            "max_players": getattr(settings, "max_players", None),
+        },
+    })
 
 
 @router.get("/games")

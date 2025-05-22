@@ -1,11 +1,18 @@
 """FastAPI application entry point for PyGridFight."""
 
 import structlog
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 
 from pygridfight.core.config import get_settings
 from pygridfight.core.logging import setup_logging
+from pygridfight.core.exceptions import GameError, PlayerError
+from pygridfight.api.middleware import (
+    RequestIDMiddleware,
+    LoggingMiddleware,
+    ErrorHandlingMiddleware,
+)
 
 logger = structlog.get_logger()
 
@@ -23,7 +30,7 @@ def create_app() -> FastAPI:
         redoc_url="/redoc" if settings.debug else None,
     )
 
-    # Add CORS middleware
+    # Add CORS middleware FIRST
     app.add_middleware(
         CORSMiddleware,
         allow_origins=settings.allowed_origins,
@@ -32,12 +39,42 @@ def create_app() -> FastAPI:
         allow_headers=["*"],
     )
 
+    # Add custom middleware
+    app.add_middleware(RequestIDMiddleware)
+    app.add_middleware(LoggingMiddleware)
+    app.add_middleware(ErrorHandlingMiddleware)
+
+    # Register global exception handlers for custom exceptions
+    @app.exception_handler(GameError)
+    async def game_error_handler(request: Request, exc: GameError):
+        logger.error("GameError", error=str(exc), request_id=getattr(request.state, "request_id", None))
+        return JSONResponse(
+            status_code=400,
+            content={"error": "GameError", "message": str(exc)},
+        )
+
+    @app.exception_handler(PlayerError)
+    async def player_error_handler(request: Request, exc: PlayerError):
+        logger.error("PlayerError", error=str(exc), request_id=getattr(request.state, "request_id", None))
+        return JSONResponse(
+            status_code=400,
+            content={"error": "PlayerError", "message": str(exc)},
+        )
+
+    # Startup/shutdown event handlers
+    @app.on_event("startup")
+    async def on_startup():
+        logger.info("App startup", event="startup")
+
+    @app.on_event("shutdown")
+    async def on_shutdown():
+        logger.info("App shutdown", event="shutdown")
+
     # Include routers
     from pygridfight.api.rest import router as rest_router
     app.include_router(rest_router)
 
     return app
-
 
 app = create_app()
 
