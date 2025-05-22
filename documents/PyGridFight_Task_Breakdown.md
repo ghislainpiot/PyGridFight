@@ -170,6 +170,7 @@ class GameSettings(BaseSettings):
 - Set up global exception handlers
 - Create custom exception classes
 - Add OpenAPI customization
+- Utilize `anyio` for managing asynchronous operations and concurrency within the FastAPI application, ensuring backend-agnostic async programming (e.g., for background tasks or concurrent I/O).
 
 **Testing Requirements**:
 - Test health check endpoint
@@ -243,6 +244,7 @@ app = FastAPI(title="PyGridFight")
 - Create base message protocol
 - Implement message validation with Pydantic
 - Add connection error handling
+- Employ `anyio` for handling concurrent WebSocket connections and related asynchronous logic (e.g., message broadcasting, task groups for per-connection tasks).
 
 **Testing Requirements**:
 - Test WebSocket connection/disconnection
@@ -264,6 +266,7 @@ app = FastAPI(title="PyGridFight")
 - Update game state after move
 - Broadcast state update to all players
 - Handle movement errors
+- Ensure all asynchronous operations, such as broadcasting state updates to players, are managed using `anyio` (e.g., with task groups or `anyio.gather`).
 
 **Testing Requirements**:
 - Test valid movements

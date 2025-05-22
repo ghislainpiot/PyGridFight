@@ -104,13 +104,14 @@ async def get_game(self, game_id: str) -> Optional[Game]:
     async with self._lock:
         return self._games.get(game_id)
 
-# Good: Use asyncio.gather for concurrent operations
-results = await asyncio.gather(
+# Good: Use anyio.gather for concurrent operations
+results = await anyio.gather(
     self.update_game(game_id, game),
     self.broadcast_state(game_id),
     return_exceptions=True
 )
 ```
+Using `anyio` provides a backend-agnostic approach to asynchronous programming, supporting both `asyncio` and `trio`. It offers robust task group management (e.g., `anyio.create_task_group()`) for structured concurrency, making it easier to manage multiple asynchronous tasks and their lifecycles. This helps in writing more maintainable and portable asynchronous code. Consider using task groups for managing related concurrent operations instead of solely relying on `anyio.gather` for more complex scenarios.
 
 ## Project Structure Guidelines
 
@@ -447,7 +448,7 @@ Each module should have a README explaining:
 2. **Async Best Practices**
    ```python
    # Good: Concurrent operations
-   await asyncio.gather(
+   await anyio.gather(
        self.update_player(player1),
        self.update_player(player2),
        self.broadcast_state()
