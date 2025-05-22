@@ -7,6 +7,14 @@ from src.pygridfight.domain.models.position import Position
 from src.pygridfight.domain.models.player import Player
 from src.pygridfight.domain.models.avatar import Avatar
 import uuid
+from typing import Optional
+from pydantic import BaseModel, Field
+
+class GameSettings(BaseModel):
+    name: str
+    max_players: int
+    grid_size: int
+    is_private: bool = False
 
 class Game(BaseModel):
     """Game domain model for PyGridFight.
@@ -26,6 +34,12 @@ class Game(BaseModel):
     avatars: Dict[str, Avatar] = Field(default_factory=dict)
     status: str = Field(default="waiting", pattern="^(waiting|active|finished)$")
     turn: int = Field(default=0, ge=0)
+
+    # API metadata fields
+    name: Optional[str] = None
+    max_players: Optional[int] = None
+    grid_size: Optional[int] = None
+    is_private: Optional[bool] = None
 
     @field_validator("id")
     @classmethod

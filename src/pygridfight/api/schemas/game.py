@@ -72,4 +72,11 @@ class GameCreateResponse(BaseModel):
 class GameJoinResponse(BaseModel):
     """Response schema for joining a game."""
     game: GameDetails = Field(..., description="Game details")
+class GameLeaveRequest(BaseModel):
+    """Request schema for leaving a game."""
+    player_id: str = Field(..., description="Player ID")
+
+class GameLeaveResponse(BaseModel):
+    """Response schema for leaving a game."""
+    message: str = Field(..., description="Confirmation message")
     player_id: str = Field(..., description="Joined player's ID")
