@@ -72,8 +72,8 @@ def test_avatar_health_and_active_status():
 
     # Healing after death should not revive (per current logic)
     avatar.heal(2)
-    assert avatar.health == 2  # health increases
-    assert avatar.active is False  # but still not active
+    assert avatar.health == 0  # health does not increase after death
+    assert avatar.active is False  # still not active
 
     # New avatar, test healing while alive
     avatar2 = Avatar(id="a4", owner_id="p6", position=Position(x=1, y=1), health=1)

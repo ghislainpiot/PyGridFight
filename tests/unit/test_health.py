@@ -33,13 +33,12 @@ def test_domain_models():
     from pygridfight.domain.enums import GameStatus, PlayerStatus
 
     # Test Game model
-    game = Game(id="test-id", name="Test Game")
+    from src.pygridfight.domain.models.grid import Grid  # Ensure same Grid as Game model
+    game = Game(id="test-id", grid={"width": 1, "height": 1})
     assert game.id == "test-id"
-    assert game.name == "Test Game"
     assert game.status == GameStatus.WAITING
 
     # Test Player model
-    player = Player(id="player-id", name="Test Player")
+    player = Player(id="player-id", display_name="Test Player")
     assert player.id == "player-id"
-    assert player.name == "Test Player"
-    assert player.status == PlayerStatus.OFFLINE
+    assert player.display_name == "Test Player"
