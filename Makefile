@@ -17,24 +17,24 @@ install:
 	uv pip install -e ".[dev]"
 
 format:
-	ruff format .
-	ruff check --fix .
+	uv run ruff format .
+	uv run ruff check --fix .
 
 lint:
-	ruff check .
-	mypy src/
+	uv run ruff check .
+	uv run mypy src/
 
 test:
-	pytest tests/ -v --cov=src --cov-report=term-missing
+	uv run pytest tests/ -v --cov=src --cov-report=term-missing
 
 test-unit:
-	pytest tests/unit/ -v
+	uv run pytest tests/unit/ -v
 
 test-integration:
-	pytest tests/integration/ -v
+	uv run pytest tests/integration/ -v
 
 run:
-	uvicorn pygridfight.main:app --reload --host 0.0.0.0 --port 8000
+	uv run uvicorn pygridfight.main:app --reload --host 0.0.0.0 --port 8000
 
 docs:
 	@echo "Documentation generation not yet implemented"
