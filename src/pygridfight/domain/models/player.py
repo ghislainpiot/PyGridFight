@@ -1,68 +1,56 @@
 """Player domain model for PyGridFight."""
 
-from datetime import datetime
-from typing import Optional
-from dataclasses import dataclass, field
+from typing import List
+from pydantic import BaseModel, Field, field_validator
 
-from pygridfight.domain.enums import PlayerStatus
+class Player(BaseModel):
+    """
+    Represents a player in PyGridFight.
 
+    Attributes:
+        id (str): Unique identifier for the player.
+        display_name (str): Display name for the player.
+        score (int): Player's score (default: 0).
+        avatar_ids (List[str]): List of avatar IDs owned by the player.
+    """
+    id: str = Field(..., description="Unique identifier for the player")
+    display_name: str = Field(..., description="Display name for the player")
+    score: int = Field(default=0, ge=0, description="Player's score (must be >= 0)")
+    avatar_ids: List[str] = Field(default_factory=list, description="List of avatar IDs owned by the player")
 
-@dataclass
-class PlayerStats:
-    """Player statistics model."""
+    def add_avatar(self, avatar_id: str) -> None:
+        """
+        Add an avatar ID to the player's list of avatars.
 
-    games_played: int = 0
-    games_won: int = 0
-    total_score: int = 0
+        Args:
+            avatar_id (str): The avatar ID to add.
+        """
+        if avatar_id not in self.avatar_ids:
+            self.avatar_ids.append(avatar_id)
 
-    @property
-    def average_score(self) -> float:
-        """Calculate average score per game."""
-        return self.total_score / self.games_played if self.games_played > 0 else 0.0
+    def remove_avatar(self, avatar_id: str) -> None:
+        """
+        Remove an avatar ID from the player's list of avatars.
 
-    @property
-    def win_rate(self) -> float:
-        """Calculate win rate percentage."""
-        return (self.games_won / self.games_played * 100) if self.games_played > 0 else 0.0
+        Args:
+            avatar_id (str): The avatar ID to remove.
+        """
+        if avatar_id in self.avatar_ids:
+            self.avatar_ids.remove(avatar_id)
 
+    def increment_score(self, amount: int = 1) -> None:
+        """
+        Increment the player's score.
 
-@dataclass
-class Player:
-    """Player domain model."""
+        Args:
+            amount (int): Amount to increment (default: 1).
+        """
+        if amount < 0:
+            raise ValueError("Score increment must be non-negative.")
+        self.score += amount
 
-    id: str
-    name: str
-    status: PlayerStatus = PlayerStatus.OFFLINE
-    created_at: datetime = field(default_factory=datetime.utcnow)
-    last_seen: Optional[datetime] = None
-    current_game_id: Optional[str] = None
-    stats: PlayerStats = field(default_factory=PlayerStats)
-
-    def join_game(self, game_id: str) -> None:
-        """Join a game."""
-        self.current_game_id = game_id
-        self.status = PlayerStatus.IN_GAME
-        self.last_seen = datetime.utcnow()
-
-    def leave_game(self) -> None:
-        """Leave current game."""
-        self.current_game_id = None
-        self.status = PlayerStatus.ONLINE
-        self.last_seen = datetime.utcnow()
-
-    def go_online(self) -> None:
-        """Set player status to online."""
-        self.status = PlayerStatus.ONLINE
-        self.last_seen = datetime.utcnow()
-
-    def go_offline(self) -> None:
-        """Set player status to offline."""
-        self.status = PlayerStatus.OFFLINE
-        self.last_seen = datetime.utcnow()
-
-    def update_stats(self, won: bool, score: int) -> None:
-        """Update player statistics after a game."""
-        self.stats.games_played += 1
-        if won:
-            self.stats.games_won += 1
-        self.stats.total_score += score
+    def reset_score(self) -> None:
+        """
+        Reset the player's score to zero.
+        """
+        self.score = 0

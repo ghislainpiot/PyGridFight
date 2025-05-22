@@ -1,75 +1,64 @@
 """Avatar domain model for PyGridFight."""
 
-from dataclasses import dataclass
-from typing import Dict, List
+from pydantic import BaseModel, Field
+from pygridfight.domain.models.grid import Position
 
-from pygridfight.domain.enums import AvatarType
+class Avatar(BaseModel):
+    """
+    Represents an avatar on the grid.
 
+    Attributes:
+        id (str): Unique identifier for the avatar.
+        owner_id (str): The player ID who owns this avatar.
+        position (Position): The avatar's position on the grid.
+        health (int): The avatar's health (default: 1).
+        active (bool): Whether the avatar is active (default: True).
+    """
+    id: str = Field(..., description="Unique identifier for the avatar")
+    owner_id: str = Field(..., description="Player ID who owns this avatar")
+    position: Position = Field(..., description="Avatar's position on the grid")
+    health: int = Field(default=1, ge=0, description="Avatar's health (must be >= 0)")
+    active: bool = Field(default=True, description="Whether the avatar is active")
 
-@dataclass
-class Position:
-    """Position coordinates."""
-    x: int
-    y: int
+    def is_alive(self) -> bool:
+        """
+        Check if the avatar is alive (health > 0 and active).
 
-    def distance_to(self, other: "Position") -> int:
-        """Calculate Manhattan distance to another position."""
-        return abs(self.x - other.x) + abs(self.y - other.y)
+        Returns:
+            bool: True if alive, False otherwise.
+        """
+        return self.active and self.health > 0
 
+    def set_position(self, new_position: Position) -> None:
+        """
+        Update the avatar's position.
 
-@dataclass
-class Avatar:
-    """Avatar domain model."""
-
-    id: str
-    player_id: str
-    avatar_type: AvatarType
-    position: Position
-    health: int = 100
-    max_health: int = 100
-    energy: int = 100
-    max_energy: int = 100
-    inventory: Dict[str, int] = None
-
-    def __post_init__(self) -> None:
-        """Initialize default values."""
-        if self.inventory is None:
-            self.inventory = {}
-
-    def move_to(self, new_position: Position) -> None:
-        """Move avatar to new position."""
+        Args:
+            new_position (Position): The new position to set.
+        """
         self.position = new_position
 
-    def take_damage(self, damage: int) -> None:
-        """Apply damage to avatar."""
-        self.health = max(0, self.health - damage)
+    def take_damage(self, amount: int) -> None:
+        """
+        Reduce the avatar's health by the given amount.
+
+        Args:
+            amount (int): Amount of damage to take.
+        """
+        if amount < 0:
+            raise ValueError("Damage amount must be non-negative.")
+        self.health = max(0, self.health - amount)
+        if self.health == 0:
+            self.active = False
 
     def heal(self, amount: int) -> None:
-        """Heal avatar."""
-        self.health = min(self.max_health, self.health + amount)
+        """
+        Heal the avatar by the given amount (if active).
 
-    def use_energy(self, amount: int) -> bool:
-        """Use energy if available."""
-        if self.energy >= amount:
-            self.energy -= amount
-            return True
-        return False
-
-    def restore_energy(self, amount: int) -> None:
-        """Restore energy."""
-        self.energy = min(self.max_energy, self.energy + amount)
-
-    @property
-    def is_alive(self) -> bool:
-        """Check if avatar is alive."""
-        return self.health > 0
-
-    @property
-    def health_percentage(self) -> float:
-        """Get health as percentage."""
-        return (self.health / self.max_health) * 100
-
-    @property
-    def energy_percentage(self) -> float:
-        """Get energy as percentage."""
-        return (self.energy / self.max_energy) * 100
+        Args:
+            amount (int): Amount to heal.
+        """
+        if amount < 0:
+            raise ValueError("Heal amount must be non-negative.")
+        if self.active:
+            self.health += amount
