@@ -5,6 +5,7 @@ from enum import Enum
 
 class GameStatus(str, Enum):
     """Game status enumeration."""
+
     WAITING = "waiting"
     ACTIVE = "active"
     FINISHED = "finished"
@@ -13,6 +14,7 @@ class GameStatus(str, Enum):
 
 class PlayerStatus(str, Enum):
     """Player status enumeration."""
+
     ONLINE = "online"
     OFFLINE = "offline"
     IN_GAME = "in_game"
@@ -20,6 +22,7 @@ class PlayerStatus(str, Enum):
 
 class ActionType(str, Enum):
     """Action type enumeration."""
+
     MOVE = "move"
     ATTACK = "attack"
     COLLECT = "collect"
@@ -29,6 +32,7 @@ class ActionType(str, Enum):
 
 class ResourceType(str, Enum):
     """Resource type enumeration."""
+
     ENERGY = "energy"
     MATERIALS = "materials"
     WEAPONS = "weapons"
@@ -37,6 +41,7 @@ class ResourceType(str, Enum):
 
 class TerrainType(str, Enum):
     """Terrain type enumeration."""
+
     EMPTY = "empty"
     WALL = "wall"
     RESOURCE = "resource"
@@ -45,6 +50,7 @@ class TerrainType(str, Enum):
 
 class Direction(str, Enum):
     """Direction enumeration."""
+
     NORTH = "north"
     SOUTH = "south"
     EAST = "east"
@@ -57,6 +63,7 @@ class Direction(str, Enum):
 
 class AvatarType(str, Enum):
     """Avatar type enumeration."""
+
     WARRIOR = "warrior"
     SCOUT = "scout"
     ENGINEER = "engineer"
@@ -65,6 +72,7 @@ class AvatarType(str, Enum):
 
 class ItemType(str, Enum):
     """Item type enumeration."""
+
     WEAPON = "weapon"
     ARMOR = "armor"
     CONSUMABLE = "consumable"
@@ -73,6 +81,7 @@ class ItemType(str, Enum):
 
 class CombatResult(str, Enum):
     """Combat result enumeration."""
+
     HIT = "hit"
     MISS = "miss"
     CRITICAL = "critical"

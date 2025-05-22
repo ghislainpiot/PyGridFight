@@ -1,8 +1,9 @@
-import pytest
 from fastapi.testclient import TestClient
+
 from pygridfight.main import app
 
 client = TestClient(app)
+
 
 def test_health_check_details():
     resp = client.get("/health")
@@ -16,9 +17,11 @@ def test_health_check_details():
     assert "python_version" in data["system"]
     assert "host" in data["config"]
 
+
 def test_cors_headers():
     resp = client.options("/health", headers={"Origin": "http://testclient"})
     assert "access-control-allow-origin" in resp.headers
+
 
 def test_openapi_docs():
     resp = client.get("/openapi.json")
@@ -26,9 +29,11 @@ def test_openapi_docs():
     data = resp.json()
     assert data["info"]["title"] == "PyGridFight"
 
+
 def test_request_id_header():
     resp = client.get("/health")
     assert "x-request-id" in resp.headers
+
 
 def test_game_error_handler(monkeypatch):
     from pygridfight.core.exceptions import GameError
@@ -40,6 +45,7 @@ def test_game_error_handler(monkeypatch):
     resp = client.get("/raise-game-error")
     assert resp.status_code == 400
     assert resp.json()["error"] == "GameError"
+
 
 def test_player_error_handler(monkeypatch):
     from pygridfight.core.exceptions import PlayerError

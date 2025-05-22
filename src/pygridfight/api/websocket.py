@@ -1,10 +1,9 @@
 """WebSocket handlers for PyGridFight."""
 
-from typing import Dict, Set
 import json
 
-from fastapi import WebSocket, WebSocketDisconnect
 import structlog
+from fastapi import WebSocket, WebSocketDisconnect
 
 from pygridfight.core.exceptions import GameError, PlayerError
 
@@ -15,8 +14,8 @@ class ConnectionManager:
     """Manages WebSocket connections for the game."""
 
     def __init__(self) -> None:
-        self.active_connections: Dict[str, WebSocket] = {}
-        self.game_connections: Dict[str, Set[str]] = {}
+        self.active_connections: dict[str, WebSocket] = {}
+        self.game_connections: dict[str, set[str]] = {}
 
     async def connect(self, websocket: WebSocket, player_id: str) -> None:
         """Accept a new WebSocket connection."""
@@ -30,7 +29,7 @@ class ConnectionManager:
             del self.active_connections[player_id]
 
         # Remove from all games
-        for game_id, players in self.game_connections.items():
+        for _, players in self.game_connections.items():
             players.discard(player_id)
 
         logger.info("Player disconnected", player_id=player_id)
@@ -53,7 +52,9 @@ class ConnectionManager:
             try:
                 await websocket.send_text(json.dumps(message))
             except Exception as e:
-                logger.error("Failed to send message", player_id=player_id, error=str(e))
+                logger.error(
+                    "Failed to send message", player_id=player_id, error=str(e)
+                )
                 self.disconnect(player_id)
 
     async def broadcast_to_game(self, message: dict, game_id: str) -> None:
@@ -68,7 +69,12 @@ class ConnectionManager:
                     websocket = self.active_connections[player_id]
                     await websocket.send_text(json.dumps(message))
                 except Exception as e:
-                    logger.error("Failed to broadcast message", player_id=player_id, game_id=game_id, error=str(e))
+                    logger.error(
+                        "Failed to broadcast message",
+                        player_id=player_id,
+                        game_id=game_id,
+                        error=str(e),
+                    )
                     disconnected_players.append(player_id)
 
         # Clean up disconnected players
@@ -94,19 +100,20 @@ async def websocket_endpoint(websocket: WebSocket, player_id: str) -> None:
                 await handle_websocket_message(message, player_id)
             except json.JSONDecodeError:
                 await manager.send_personal_message(
-                    {"type": "error", "message": "Invalid JSON format"},
-                    player_id
+                    {"type": "error", "message": "Invalid JSON format"}, player_id
                 )
             except (GameError, PlayerError) as e:
                 await manager.send_personal_message(
-                    {"type": "error", "message": e.message, "code": e.code},
-                    player_id
+                    {"type": "error", "message": e.message, "code": e.code}, player_id
                 )
             except Exception as e:
-                logger.error("Unexpected error handling message", player_id=player_id, error=str(e))
+                logger.error(
+                    "Unexpected error handling message",
+                    player_id=player_id,
+                    error=str(e),
+                )
                 await manager.send_personal_message(
-                    {"type": "error", "message": "Internal server error"},
-                    player_id
+                    {"type": "error", "message": "Internal server error"}, player_id
                 )
 
     except WebSocketDisconnect:
@@ -124,5 +131,5 @@ async def handle_websocket_message(message: dict, player_id: str) -> None:
         logger.warning("Unknown message type", type=message_type, player_id=player_id)
         await manager.send_personal_message(
             {"type": "error", "message": f"Unknown message type: {message_type}"},
-            player_id
+            player_id,
         )

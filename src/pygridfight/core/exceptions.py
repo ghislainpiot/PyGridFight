@@ -12,6 +12,7 @@ class PyGridFightError(Exception):
 
 class GameError(PyGridFightError):
     """Base exception for game-related errors."""
+
     pass
 
 
@@ -33,6 +34,7 @@ class GameFullError(GameError):
 
 class PlayerError(PyGridFightError):
     """Base exception for player-related errors."""
+
     pass
 
 
@@ -57,7 +59,10 @@ class ValidationError(PyGridFightError):
     """Raised when validation fails."""
 
     def __init__(self, field: str, value: str, reason: str) -> None:
-        super().__init__(f"Validation failed for '{field}' with value '{value}': {reason}", "VALIDATION_ERROR")
+        super().__init__(
+            f"Validation failed for '{field}' with value '{value}': {reason}",
+            "VALIDATION_ERROR",
+        )
         self.field = field
         self.value = value
         self.reason = reason

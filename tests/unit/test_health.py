@@ -1,7 +1,5 @@
 """Basic health check test to verify pytest is working."""
 
-import pytest
-
 
 def test_basic_assertion():
     """Test that basic assertions work."""
@@ -28,12 +26,12 @@ def test_game_manager_creation():
 
 def test_domain_models():
     """Test that domain models can be imported and created."""
+    from pygridfight.domain.enums import GameStatus
     from pygridfight.domain.models.game import Game
     from pygridfight.domain.models.player import Player
-    from pygridfight.domain.enums import GameStatus, PlayerStatus
 
     # Test Game model
-    from src.pygridfight.domain.models.grid import Grid  # Ensure same Grid as Game model
+
     game = Game(id="test-id", grid={"width": 1, "height": 1})
     assert game.id == "test-id"
     assert game.status == GameStatus.WAITING

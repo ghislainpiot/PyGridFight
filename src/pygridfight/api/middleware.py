@@ -1,16 +1,14 @@
 """Custom middleware for PyGridFight FastAPI app."""
 
-import structlog
 import uuid
+
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.requests import Request
-from starlette.responses import Response
-from starlette.types import ASGIApp, Receive, Scope, Send
-from fastapi import Request as FastAPIRequest
 
 from pygridfight.core.logging import get_logger
 
 logger = get_logger(__name__)
+
 
 class RequestIDMiddleware(BaseHTTPMiddleware):
     """Middleware to add a unique request ID to each request."""
@@ -22,6 +20,7 @@ class RequestIDMiddleware(BaseHTTPMiddleware):
         response.headers["X-Request-ID"] = request_id
         return response
 
+
 class LoggingMiddleware(BaseHTTPMiddleware):
     """Middleware to log request and response details."""
 
@@ -31,6 +30,7 @@ class LoggingMiddleware(BaseHTTPMiddleware):
         response = await call_next(request)
         log.info("Request finished", status_code=response.status_code)
         return response
+
 
 class ErrorHandlingMiddleware(BaseHTTPMiddleware):
     """Middleware to catch unhandled exceptions and log them."""

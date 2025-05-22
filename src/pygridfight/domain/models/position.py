@@ -2,6 +2,7 @@
 
 from pydantic import BaseModel, Field
 
+
 class Position(BaseModel):
     """
     Represents a position on the grid.
@@ -10,6 +11,7 @@ class Position(BaseModel):
         x (int): The x-coordinate (column).
         y (int): The y-coordinate (row).
     """
+
     x: int = Field(..., description="X coordinate (column)")
     y: int = Field(..., description="Y coordinate (row)")
 

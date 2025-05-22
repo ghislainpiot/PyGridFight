@@ -1,26 +1,21 @@
-import pytest
 from fastapi.testclient import TestClient
+
 from src.pygridfight.main import app
 
 client = TestClient(app)
 
+
 def create_game_payload():
-    return {
-        "name": "Test Game",
-        "max_players": 4,
-        "grid_size": 20,
-        "is_private": False
-    }
+    return {"name": "Test Game", "max_players": 4, "grid_size": 20, "is_private": False}
+
 
 def join_game_payload(name="Player1"):
-    return {
-        "player_name": name
-    }
+    return {"player_name": name}
+
 
 def leave_game_payload(player_id):
-    return {
-        "player_id": player_id
-    }
+    return {"player_id": player_id}
+
 
 def test_create_and_get_game():
     # Create game
@@ -37,6 +32,7 @@ def test_create_and_get_game():
     assert game["id"] == game_id
     assert game["name"] == "Test Game"
 
+
 def test_list_games():
     # Create a game to ensure at least one exists
     client.post("/games", json=create_game_payload())
@@ -45,6 +41,7 @@ def test_list_games():
     data = resp.json()
     assert "games" in data
     assert data["total"] >= 1
+
 
 def test_join_and_leave_game():
     # Create game
@@ -59,10 +56,13 @@ def test_join_and_leave_game():
     player_id = join_data["player_id"]
 
     # Leave game
-    resp = client.request("DELETE", f"/games/{game_id}/leave", json=leave_game_payload(player_id))
+    resp = client.request(
+        "DELETE", f"/games/{game_id}/leave", json=leave_game_payload(player_id)
+    )
     assert resp.status_code == 200
     leave_data = resp.json()
     assert "message" in leave_data
+
 
 def test_delete_game():
     # Create game
@@ -76,6 +76,7 @@ def test_delete_game():
     # Ensure game is gone
     resp = client.get(f"/games/{game_id}")
     assert resp.status_code == 404
+
 
 def test_join_full_game():
     # Create game with 2 max players
@@ -92,17 +93,23 @@ def test_join_full_game():
     resp = client.post(f"/games/{game_id}/join", json=join_game_payload("P3"))
     assert resp.status_code == 400
 
+
 def test_join_nonexistent_game():
     resp = client.post("/games/doesnotexist/join", json=join_game_payload("Ghost"))
     assert resp.status_code == 404
 
+
 def test_leave_nonexistent_game():
-    resp = client.request("DELETE", "/games/doesnotexist/leave", json=leave_game_payload("ghostid"))
+    resp = client.request(
+        "DELETE", "/games/doesnotexist/leave", json=leave_game_payload("ghostid")
+    )
     assert resp.status_code == 404
+
 
 def test_delete_nonexistent_game():
     resp = client.delete("/games/doesnotexist")
     assert resp.status_code == 404
+
 
 def test_create_game_invalid_payload():
     # Missing name
@@ -111,10 +118,12 @@ def test_create_game_invalid_payload():
     resp = client.post("/games", json=payload)
     assert resp.status_code == 422
 
+
 def test_join_game_invalid_payload():
     # Missing player_name
     resp = client.post("/games/someid/join", json={})
     assert resp.status_code == 422
+
 
 def test_leave_game_invalid_payload():
     # Missing player_id

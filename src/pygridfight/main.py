@@ -5,14 +5,14 @@ from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
-from pygridfight.core.config import get_settings
-from pygridfight.core.logging import setup_logging
-from pygridfight.core.exceptions import GameError, PlayerError
 from pygridfight.api.middleware import (
-    RequestIDMiddleware,
-    LoggingMiddleware,
     ErrorHandlingMiddleware,
+    LoggingMiddleware,
+    RequestIDMiddleware,
 )
+from pygridfight.core.config import get_settings
+from pygridfight.core.exceptions import GameError, PlayerError
+from pygridfight.core.logging import setup_logging
 
 logger = structlog.get_logger()
 
@@ -47,7 +47,11 @@ def create_app() -> FastAPI:
     # Register global exception handlers for custom exceptions
     @app.exception_handler(GameError)
     async def game_error_handler(request: Request, exc: GameError):
-        logger.error("GameError", error=str(exc), request_id=getattr(request.state, "request_id", None))
+        logger.error(
+            "GameError",
+            error=str(exc),
+            request_id=getattr(request.state, "request_id", None),
+        )
         return JSONResponse(
             status_code=400,
             content={"error": "GameError", "message": str(exc)},
@@ -55,7 +59,11 @@ def create_app() -> FastAPI:
 
     @app.exception_handler(PlayerError)
     async def player_error_handler(request: Request, exc: PlayerError):
-        logger.error("PlayerError", error=str(exc), request_id=getattr(request.state, "request_id", None))
+        logger.error(
+            "PlayerError",
+            error=str(exc),
+            request_id=getattr(request.state, "request_id", None),
+        )
         return JSONResponse(
             status_code=400,
             content={"error": "PlayerError", "message": str(exc)},
@@ -72,9 +80,11 @@ def create_app() -> FastAPI:
 
     # Include routers
     from pygridfight.api.rest import router as rest_router
+
     app.include_router(rest_router)
 
     return app
+
 
 app = create_app()
 

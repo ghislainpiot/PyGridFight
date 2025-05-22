@@ -1,11 +1,12 @@
 """In-memory game state management for PyGridFight."""
 
 import time
-from typing import Optional, Dict, List
+
 import anyio
 
-from src.pygridfight.domain.models.game import Game
 from src.pygridfight.core.config import GameSettings
+from src.pygridfight.domain.models.game import Game
+
 
 class GameStateManager:
     """Thread-safe, in-memory manager for PyGridFight game state.
@@ -32,9 +33,9 @@ class GameStateManager:
         """
         if hasattr(self, "_initialized") and self._initialized:
             return
-        self._games: Dict[str, Game] = {}
-        self._connections: Dict[str, Dict[str, dict]] = {}
-        self._game_timestamps: Dict[str, float] = {}
+        self._games: dict[str, Game] = {}
+        self._connections: dict[str, dict[str, dict]] = {}
+        self._game_timestamps: dict[str, float] = {}
         self._lock = anyio.Lock()
         self._game_timeout = game_timeout
         self._initialized = True
@@ -49,7 +50,10 @@ class GameStateManager:
         Returns:
             The created Game instance.
         """
-        from src.pygridfight.domain.models.grid import Grid  # Local import to avoid circular
+        from src.pygridfight.domain.models.grid import (
+            Grid,
+        )  # Local import to avoid circular
+
         async with self._lock:
             if game_id in self._games:
                 raise ValueError(f"Game {game_id} already exists")
@@ -66,7 +70,7 @@ class GameStateManager:
             self._game_timestamps[game_id] = time.monotonic()
             return game
 
-    async def get_game(self, game_id: str) -> Optional[Game]:
+    async def get_game(self, game_id: str) -> Game | None:
         """Retrieve a game by its ID.
 
         Args:
@@ -107,7 +111,7 @@ class GameStateManager:
             self._game_timestamps.pop(game_id, None)
             return existed
 
-    async def list_active_games(self) -> List[str]:
+    async def list_active_games(self) -> list[str]:
         """List all currently active game IDs.
 
         Returns:
@@ -116,7 +120,9 @@ class GameStateManager:
         async with self._lock:
             return list(self._games.keys())
 
-    async def add_player_connection(self, game_id: str, player_id: str, connection_info: dict) -> None:
+    async def add_player_connection(
+        self, game_id: str, player_id: str, connection_info: dict
+    ) -> None:
         """Track a player's connection to a game.
 
         Args:
@@ -142,7 +148,7 @@ class GameStateManager:
                 if not self._connections[game_id]:
                     self._connections.pop(game_id, None)
 
-    async def get_player_connections(self, game_id: str) -> Dict[str, dict]:
+    async def get_player_connections(self, game_id: str) -> dict[str, dict]:
         """Get all player connections for a game.
 
         Args:
@@ -159,7 +165,8 @@ class GameStateManager:
         now = time.monotonic()
         async with self._lock:
             expired = [
-                gid for gid, ts in self._game_timestamps.items()
+                gid
+                for gid, ts in self._game_timestamps.items()
                 if now - ts > self._game_timeout
             ]
             for gid in expired:

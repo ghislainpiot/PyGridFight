@@ -1,7 +1,7 @@
 """Player domain model for PyGridFight."""
 
-from typing import List
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, Field
+
 
 class Player(BaseModel):
     """
@@ -13,10 +13,13 @@ class Player(BaseModel):
         score (int): Player's score (default: 0).
         avatar_ids (List[str]): List of avatar IDs owned by the player.
     """
+
     id: str = Field(..., description="Unique identifier for the player")
     display_name: str = Field(..., description="Display name for the player")
     score: int = Field(default=0, ge=0, description="Player's score (must be >= 0)")
-    avatar_ids: List[str] = Field(default_factory=list, description="List of avatar IDs owned by the player")
+    avatar_ids: list[str] = Field(
+        default_factory=list, description="List of avatar IDs owned by the player"
+    )
 
     def add_avatar(self, avatar_id: str) -> None:
         """

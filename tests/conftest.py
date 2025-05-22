@@ -21,17 +21,10 @@ def client(app):
 @pytest.fixture
 def sample_game_data():
     """Sample game data for testing."""
-    return {
-        "name": "Test Game",
-        "max_players": 4,
-        "grid_size": 20,
-        "is_private": False
-    }
+    return {"name": "Test Game", "max_players": 4, "grid_size": 20, "is_private": False}
 
 
 @pytest.fixture
 def sample_player_data():
     """Sample player data for testing."""
-    return {
-        "name": "Test Player"
-    }
+    return {"name": "Test Player"}

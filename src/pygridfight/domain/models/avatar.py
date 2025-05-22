@@ -1,7 +1,9 @@
 """Avatar domain model for PyGridFight."""
 
 from pydantic import BaseModel, Field
+
 from pygridfight.domain.models.position import Position
+
 
 class Avatar(BaseModel):
     """
@@ -14,6 +16,7 @@ class Avatar(BaseModel):
         health (int): The avatar's health (default: 1).
         active (bool): Whether the avatar is active (default: True).
     """
+
     id: str = Field(..., description="Unique identifier for the avatar")
     owner_id: str = Field(..., description="Player ID who owns this avatar")
     position: Position = Field(..., description="Avatar's position on the grid")

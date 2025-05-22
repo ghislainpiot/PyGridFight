@@ -1,7 +1,6 @@
 """Resource domain model for PyGridFight."""
 
 from dataclasses import dataclass
-from typing import Optional
 
 from pygridfight.domain.enums import ResourceType
 from pygridfight.domain.models.avatar import Position
@@ -16,7 +15,7 @@ class Resource:
     position: Position
     amount: int
     max_amount: int
-    respawn_time: Optional[int] = None  # seconds until respawn
+    respawn_time: int | None = None  # seconds until respawn
     is_depleted: bool = False
 
     def collect(self, amount: int) -> int:

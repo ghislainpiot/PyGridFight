@@ -1,23 +1,27 @@
 """Logging configuration for PyGridFight."""
 
+import contextvars
 import logging
 import sys
-import structlog
-import contextvars
-from functools import wraps
+from collections.abc import Callable
 from contextlib import contextmanager
-from typing import Any, Callable
+from functools import wraps
+from typing import Any
+
+import structlog
 
 from src.pygridfight.core.config import get_server_settings
 
 # Context variable for correlation ID
 _correlation_id_ctx = contextvars.ContextVar("correlation_id", default=None)
 
+
 def _add_correlation_id(logger, method_name, event_dict):
     cid = _correlation_id_ctx.get()
     if cid is not None:
         event_dict["correlation_id"] = cid
     return event_dict
+
 
 def setup_logging() -> None:
     """Set up structured logging for the application."""
@@ -55,9 +59,11 @@ def setup_logging() -> None:
         cache_logger_on_first_use=True,
     )
 
+
 def get_logger(name: str = __name__) -> structlog.BoundLogger:
     """Get a structured logger instance."""
     return structlog.get_logger(name)
+
 
 @contextmanager
 def with_correlation_id(correlation_id: str):
@@ -68,12 +74,16 @@ def with_correlation_id(correlation_id: str):
     finally:
         _correlation_id_ctx.reset(token)
 
+
 def log_with_correlation_id(func: Callable) -> Callable:
     """Decorator to propagate correlation ID into function logs."""
+
     @wraps(func)
     def wrapper(*args, **kwargs):
         return func(*args, **kwargs)
+
     return wrapper
+
 
 @contextmanager
 def with_request_context(request: Any):

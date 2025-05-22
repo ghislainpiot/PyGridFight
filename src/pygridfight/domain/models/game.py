@@ -1,20 +1,21 @@
 """Game domain model for PyGridFight."""
 
-from typing import Dict, Optional
-from pydantic import BaseModel, Field, field_validator, model_validator
-from src.pygridfight.domain.models.grid import Grid
-from src.pygridfight.domain.models.position import Position
-from src.pygridfight.domain.models.player import Player
-from src.pygridfight.domain.models.avatar import Avatar
 import uuid
-from typing import Optional
-from pydantic import BaseModel, Field
+
+from pydantic import BaseModel, Field, field_validator
+
+from src.pygridfight.domain.models.avatar import Avatar
+from src.pygridfight.domain.models.grid import Grid
+from src.pygridfight.domain.models.player import Player
+from src.pygridfight.domain.models.position import Position
+
 
 class GameSettings(BaseModel):
     name: str
     max_players: int
     grid_size: int
     is_private: bool = False
+
 
 class Game(BaseModel):
     """Game domain model for PyGridFight.
@@ -30,16 +31,16 @@ class Game(BaseModel):
 
     id: str = Field(..., min_length=1)
     grid: Grid
-    players: Dict[str, Player] = Field(default_factory=dict)
-    avatars: Dict[str, Avatar] = Field(default_factory=dict)
+    players: dict[str, Player] = Field(default_factory=dict)
+    avatars: dict[str, Avatar] = Field(default_factory=dict)
     status: str = Field(default="waiting", pattern="^(waiting|active|finished)$")
     turn: int = Field(default=0, ge=0)
 
     # API metadata fields
-    name: Optional[str] = None
-    max_players: Optional[int] = None
-    grid_size: Optional[int] = None
-    is_private: Optional[bool] = None
+    name: str | None = None
+    max_players: int | None = None
+    grid_size: int | None = None
+    is_private: bool | None = None
 
     @field_validator("id")
     @classmethod
@@ -69,7 +70,9 @@ class Game(BaseModel):
         """
         self.players.pop(player_id, None)
         # Remove all avatars belonging to this player
-        to_remove = [aid for aid, av in self.avatars.items() if av.player_id == player_id]
+        to_remove = [
+            aid for aid, av in self.avatars.items() if av.player_id == player_id
+        ]
         for aid in to_remove:
             self.avatars.pop(aid, None)
 
@@ -105,7 +108,7 @@ class Game(BaseModel):
         self.players[player_id].add_avatar(avatar_id)
         return avatar
 
-    def check_victory_conditions(self) -> Optional[str]:
+    def check_victory_conditions(self) -> str | None:
         """Check if any player meets the victory condition.
 
         Returns:
@@ -127,7 +130,11 @@ class Game(BaseModel):
             "id": self.id,
             "status": self.status,
             "turn": self.turn,
-            "players": {pid: player.model_dump() for pid, player in self.players.items()},
-            "avatars": {aid: avatar.model_dump() for aid, avatar in self.avatars.items()},
+            "players": {
+                pid: player.model_dump() for pid, player in self.players.items()
+            },
+            "avatars": {
+                aid: avatar.model_dump() for aid, avatar in self.avatars.items()
+            },
             "grid": self.grid.model_dump(),
         }
