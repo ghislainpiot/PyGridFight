@@ -4,7 +4,7 @@ from dataclasses import dataclass, field
 from typing import Dict, List, Optional, Tuple
 
 from pygridfight.domain.enums import TerrainType
-from pygridfight.domain.models.avatar import Position
+from pygridfight.domain.models.position import Position
 
 
 @dataclass
@@ -114,24 +114,6 @@ class Grid:
 from pydantic import BaseModel, Field, model_validator
 from typing import List
 
-class Position(BaseModel):
-    """
-    Represents a position on the grid.
-
-    Attributes:
-        x (int): The x-coordinate (column).
-        y (int): The y-coordinate (row).
-    """
-    x: int = Field(..., description="X coordinate (column)")
-    y: int = Field(..., description="Y coordinate (row)")
-
-    def __hash__(self):
-        return hash((self.x, self.y))
-
-    def __eq__(self, other):
-        if not isinstance(other, Position):
-            return NotImplemented
-        return self.x == other.x and self.y == other.y
 
 class Grid(BaseModel):
     """

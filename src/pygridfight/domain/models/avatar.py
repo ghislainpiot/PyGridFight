@@ -1,7 +1,7 @@
 """Avatar domain model for PyGridFight."""
 
 from pydantic import BaseModel, Field
-from pygridfight.domain.models.grid import Position
+from pygridfight.domain.models.position import Position
 
 class Avatar(BaseModel):
     """
