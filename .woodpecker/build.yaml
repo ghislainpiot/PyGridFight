@@ -1,0 +1,29 @@
+when:
+  - event: push
+    branch: main
+  - event: pull_request
+  - event: cron
+  - event: manual
+
+steps:
+  - name: Install Dependencies and Run Tests
+    image: ghcr.io/astral-sh/uv:debian-slim
+    commands:
+      - uv sync --all-extras
+      - uv run pytest --cov=src/pygridfight --cov-report=xml:coverage.xml
+      - uv run ruff check src/pygridfight --output-format=json > ruff-issues.json
+
+  - name: Print ruff issues
+    image: alpine/git
+    commands:
+      - cat ruff-issues.json
+
+  - name: SQC Scan
+    image: sonarsource/sonar-scanner-cli
+    environment:
+      SONAR_TOKEN:
+        from_secret: SONAR_TOKEN
+      SONAR_BRANCH_NAME: ${CI_COMMIT_BRANCH}
+      SONAR_BRANCH_TARGET: ${CI_COMMIT_TARGET_BRANCH}
+    commands:
+      - sonar-scanner -Dsonar.python.coverage.reportPaths=coverage.xml -Dsonar.python.ruff.reportPaths=ruff-issues.json
