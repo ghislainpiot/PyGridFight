@@ -23,9 +23,13 @@ class ResourceTypeEnum(Enum):
 
     Members:
         CURRENCY: Standard in-game currency.
+        GOLD: Valuable collectible resource.
+        ENERGY: Resource used for special actions or avatar abilities.
         POWER_UP_SPEED_BOOST: Power-up resource for speed boost.
     """
     CURRENCY = "CURRENCY"
+    GOLD = "GOLD"
+    ENERGY = "ENERGY"
     POWER_UP_SPEED_BOOST = "POWER_UP_SPEED_BOOST"
 
 
