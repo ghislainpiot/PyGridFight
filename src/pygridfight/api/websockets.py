@@ -1,6 +1,7 @@
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect
 from uuid import UUID
 from pydantic import ValidationError
+from pygridfight.api.converters import convert_game_session_to_schema
 from pygridfight.core.models import Coordinates # Add import
 from pygridfight.game_lifecycle.exceptions import GameNotFoundError
 from pygridfight.api.connection_manager import ConnectionManager
@@ -11,7 +12,6 @@ from pygridfight.api.schemas import (
 )
 from pygridfight.gameplay.actions import MoveAction, CollectAction
 from pygridfight.core.enums import PlayerActionEnum
-from pygridfight.main import convert_game_session_to_schema
 
 ws_router = APIRouter()
 
