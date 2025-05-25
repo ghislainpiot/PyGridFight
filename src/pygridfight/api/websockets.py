@@ -1,6 +1,17 @@
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect
 from uuid import UUID
+from pydantic import ValidationError
 from pygridfight.game_lifecycle.exceptions import GameNotFoundError
+from pygridfight.api.connection_manager import ConnectionManager
+from pygridfight.api.schemas import (
+    MoveActionRequestSchema,
+    CollectActionRequestSchema,
+    WebSocketMessageSchema,
+    GameStateSchema,
+)
+from pygridfight.gameplay.actions import MoveAction, CollectAction
+from pygridfight.core.enums import PlayerActionEnum
+from pygridfight.main import convert_game_session_to_schema
 
 ws_router = APIRouter()
 
@@ -15,26 +26,100 @@ async def websocket_game_endpoint(websocket: WebSocket, session_id: UUID):
 
     Behavior:
         - Accepts connection if session exists, else closes with error.
-        - Echoes received messages for MVP.
-        - Logs connect/disconnect events.
+        - Handles player actions, broadcasts state, and manages connections.
     """
     game_manager = websocket.app.state.game_manager
+    connection_manager: ConnectionManager = websocket.app.state.connection_manager
     try:
         game_session = game_manager.get_game_session_or_raise(session_id)
     except GameNotFoundError:
         await websocket.close(code=4004)
         return
-    await websocket.accept()
+
+    await connection_manager.connect(websocket, session_id)
     print(f"Player connected to game {session_id}")
+
+    # Send initial game state
     try:
+        from fastapi.encoders import jsonable_encoder
+        initial_state_schema = convert_game_session_to_schema(game_session)
+        initial_message = WebSocketMessageSchema(
+            type="game_state_update",
+            payload=initial_state_schema.model_dump()
+        )
+        await websocket.send_json(jsonable_encoder(initial_message.model_dump()))
+
         while True:
-            data = await websocket.receive_text()
-            print(f"Game {session_id}: Received message: {data}")
-            await websocket.send_text(f"Message received: {data}")
+            data = await websocket.receive_json()
+            try:
+                message_type = data.get("action_type")
+                payload = data.get("payload")
+                avatar_id_str = data.get("avatar_id")
+                if not message_type or not payload or not avatar_id_str:
+                    raise ValueError("Missing action_type, payload, or avatar_id")
+                avatar_id = UUID(avatar_id_str)
+
+                domain_action = None
+                if message_type == PlayerActionEnum.MOVE.value:
+                    action_schema = MoveActionRequestSchema(**data)
+                    domain_action = MoveAction(
+                        avatar_id=action_schema.avatar_id,
+                        target_coordinates=action_schema.payload.target_coordinates
+                    )
+                elif message_type == PlayerActionEnum.COLLECT.value:
+                    action_schema = CollectActionRequestSchema(**data)
+                    domain_action = CollectAction(
+                        avatar_id=action_schema.avatar_id,
+                        target_coordinates=action_schema.payload.target_coordinates
+                    )
+                else:
+                    error_msg = WebSocketMessageSchema(
+                        type="error",
+                        payload={"message": f"Unknown action type: {message_type}"}
+                    )
+                    from fastapi.encoders import jsonable_encoder
+                    await websocket.send_json(jsonable_encoder(error_msg.model_dump()))
+                    continue
+
+                if domain_action:
+                    game_session.process_player_action(domain_action)
+                    updated_state_schema = convert_game_session_to_schema(game_session)
+                    broadcast_message = WebSocketMessageSchema(
+                        type="game_state_update",
+                        payload=updated_state_schema.model_dump()
+                    )
+                    from fastapi.encoders import jsonable_encoder
+                    await connection_manager.broadcast_json(
+                        jsonable_encoder(broadcast_message.model_dump()), session_id
+                    )
+
+            except ValidationError as e:
+                error_msg = WebSocketMessageSchema(
+                    type="error",
+                    payload={"message": "Invalid action format", "details": e.errors()}
+                )
+                from fastapi.encoders import jsonable_encoder
+                await websocket.send_json(jsonable_encoder(error_msg.model_dump()))
+            except ValueError as e:
+                error_msg = WebSocketMessageSchema(
+                    type="error",
+                    payload={"message": str(e)}
+                )
+                from fastapi.encoders import jsonable_encoder
+                await websocket.send_json(jsonable_encoder(error_msg.model_dump()))
+            except Exception as e:
+                print(f"Error processing action in game {session_id}: {e}")
+                error_msg = WebSocketMessageSchema(
+                    type="error",
+                    payload={"message": f"Error processing action: {str(e)}"}
+                )
+                await websocket.send_json(error_msg.model_dump())
+
     except WebSocketDisconnect:
         print(f"Player disconnected from game {session_id}")
     except Exception as e:
         print(f"Error in WebSocket for game {session_id}: {e}")
         await websocket.close(code=1011)
     finally:
+        connection_manager.disconnect(websocket, session_id)
         print(f"Cleaning up WebSocket for game {session_id}")

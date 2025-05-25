@@ -13,8 +13,12 @@ from pygridfight.api.schemas import (
 from pygridfight.gameplay.session import GameSession
 from pygridfight.game_lifecycle.exceptions import GameNotFoundError
 
+from pygridfight.api.connection_manager import ConnectionManager
+
 app = FastAPI(title="PyGridFight API")
 game_manager = GameLifecycleManager()
+connection_manager = ConnectionManager()
+app.state.connection_manager = connection_manager
 api_router = APIRouter()
 
 def convert_game_session_to_schema(session: GameSession) -> GameStateSchema:
