@@ -1,7 +1,14 @@
-from typing import List, Any
+from __future__ import annotations
+from typing import List, Any, Optional
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from .player import Player
 from uuid import UUID
 
 from ..core.models import Coordinates
+from .grid import Grid
+from .resources import Resource
+from .exceptions import InvalidMoveError
 
 class Avatar:
     """
@@ -33,11 +40,38 @@ class Avatar:
         self.position: Coordinates = initial_position
         self.active_powerups: List[Any] = []
 
-    def move(self, new_position: Coordinates) -> None:
+    def move(self, new_coordinates: Coordinates, grid: Grid) -> None:
         """
-        Move the avatar to a new position.
+        Move the avatar to a new position, validating with the grid.
 
         Args:
-            new_position (Coordinates): The new position to move the avatar to.
+            new_coordinates (Coordinates): The new position to move the avatar to.
+            grid (Grid): The grid to validate the move against.
+
+        Raises:
+            InvalidMoveError: If the move is outside grid boundaries or to a non-existent cell.
         """
-        self.position = new_position
+        if not grid.is_valid_coordinates(new_coordinates):
+            raise InvalidMoveError(f"Target coordinates {new_coordinates} are outside grid boundaries.")
+        if grid.get_cell(new_coordinates) is None:
+            raise InvalidMoveError(f"Target cell at {new_coordinates} does not exist.")
+        self.position = new_coordinates
+
+    def collect(self, grid: Grid, player: "Player") -> Optional[Resource]:
+        """
+        Attempt to collect a resource at the avatar's current position.
+
+        Args:
+            grid (Grid): The grid to collect the resource from.
+            player (Player): The player owning this avatar, to update currency if collected.
+
+        Returns:
+            Optional[Resource]: The collected resource, or None if no resource was present.
+        """
+        # Import here to avoid circular import
+        from .player import Player
+
+        collected_resource = grid.collect_resource_at(self.position)
+        if collected_resource:
+            player.update_currency(collected_resource.value)
+        return collected_resource

@@ -1,7 +1,7 @@
 from typing import Dict, Optional
 from pygridfight.core.models import Coordinates
 from pygridfight.gameplay.models import Cell
-from src.pygridfight.gameplay.resources import Resource
+from pygridfight.gameplay.resources import Resource
 
 class Grid:
     """

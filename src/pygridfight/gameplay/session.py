@@ -1,6 +1,6 @@
 import uuid
 import random
-from typing import Optional
+from typing import Optional, Union
 
 from ..gameplay.player import Player
 from ..gameplay.grid import Grid
@@ -8,7 +8,8 @@ from ..gameplay.resources import Resource
 from ..scoring.services import ScoreKeeper
 from ..core.enums import GameStatusEnum, ResourceTypeEnum
 from ..core.models import Coordinates
-
+from .actions import MoveAction, CollectAction
+from .exceptions import InvalidMoveError
 
 class GameSession:
     """
@@ -94,3 +95,36 @@ class GameSession:
         if winner_id is not None:
             self.status = GameStatusEnum.FINISHED
             self.winner = winner_id
+
+    def process_player_action(self, action: Union[MoveAction, CollectAction]) -> None:
+        """
+        Process a player action (Move or Collect) for the current session.
+
+        Args:
+            action (MoveAction or CollectAction): The action to process.
+        """
+        avatar_to_act = None
+        for avatar_obj in self.player.avatars:
+            if avatar_obj.avatar_id == action.avatar_id:
+                avatar_to_act = avatar_obj
+                break
+        if avatar_to_act is None:
+            print(f"Warning: Avatar {action.avatar_id} not found for player {self.player.player_id}")
+            return
+
+        if isinstance(action, MoveAction):
+            try:
+                avatar_to_act.move(action.target_coordinates, self.grid)
+            except InvalidMoveError as e:
+                print(f"Move failed for avatar {avatar_to_act.avatar_id}: {e}")
+            self._check_game_end()
+            return
+
+        if isinstance(action, CollectAction):
+            if avatar_to_act.position != action.target_coordinates:
+                print(f"Collect failed: Avatar {avatar_to_act.avatar_id} not at target {action.target_coordinates}.")
+                return
+            collected_resource = avatar_to_act.collect(self.grid, self.player)
+            if collected_resource and collected_resource.resource_type == ResourceTypeEnum.CURRENCY:
+                self.score_keeper.record_score(self.player.player_id, collected_resource.value)
+            self._check_game_end()

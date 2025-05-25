@@ -124,3 +124,87 @@ def test_no_victory_condition_leaves_status_in_progress(session, score_keeper):
     session._check_game_end()
     assert session.status == GameStatusEnum.IN_PROGRESS
     assert session.winner is None
+from pygridfight.gameplay.actions import MoveAction, CollectAction
+from pygridfight.gameplay.exceptions import InvalidMoveError
+from pygridfight.core.enums import ResourceTypeEnum
+
+def make_avatar_with_id(avatar_id, position):
+    avatar = mock.Mock()
+    avatar.avatar_id = avatar_id
+    avatar.position = position
+    return avatar
+
+def test_process_player_action_move_valid(session):
+    avatar_id = uuid.uuid4()
+    avatar = make_avatar_with_id(avatar_id, Coordinates(0, 0))
+    session.player.avatars = [avatar]
+    action = MoveAction(avatar_id=avatar_id, target_coordinates=Coordinates(1, 1))
+    with mock.patch.object(avatar, "move") as mock_move, \
+         mock.patch.object(session, "_check_game_end") as mock_check_end:
+        session.process_player_action(action)
+        mock_move.assert_called_once_with(Coordinates(1, 1), session.grid)
+        mock_check_end.assert_called_once()
+
+def test_process_player_action_move_invalid(session, capsys):
+    avatar_id = uuid.uuid4()
+    avatar = make_avatar_with_id(avatar_id, Coordinates(0, 0))
+    session.player.avatars = [avatar]
+    action = MoveAction(avatar_id=avatar_id, target_coordinates=Coordinates(1, 1))
+    with mock.patch.object(avatar, "move", side_effect=InvalidMoveError("bad move")), \
+         mock.patch.object(session, "_check_game_end") as mock_check_end:
+        session.process_player_action(action)
+        out = capsys.readouterr().out
+        assert "Move failed for avatar" in out
+        mock_check_end.assert_called_once()
+
+def test_process_player_action_collect_valid_currency(session):
+    avatar_id = uuid.uuid4()
+    coords = Coordinates(2, 2)
+    avatar = make_avatar_with_id(avatar_id, coords)
+    session.player.avatars = [avatar]
+    action = CollectAction(avatar_id=avatar_id, target_coordinates=coords)
+    resource = mock.Mock()
+    resource.resource_type = ResourceTypeEnum.CURRENCY
+    resource.value = 10
+    with mock.patch.object(avatar, "collect", return_value=resource) as mock_collect, \
+         mock.patch.object(session.score_keeper, "record_score") as mock_record_score, \
+         mock.patch.object(session, "_check_game_end") as mock_check_end:
+        session.process_player_action(action)
+        mock_collect.assert_called_once_with(session.grid, session.player)
+        mock_record_score.assert_called_once_with(session.player.player_id, 10)
+        mock_check_end.assert_called_once()
+
+def test_process_player_action_collect_not_at_target(session, capsys):
+    avatar_id = uuid.uuid4()
+    avatar = make_avatar_with_id(avatar_id, Coordinates(0, 0))
+    session.player.avatars = [avatar]
+    action = CollectAction(avatar_id=avatar_id, target_coordinates=Coordinates(1, 1))
+    with mock.patch.object(session, "_check_game_end") as mock_check_end:
+        session.process_player_action(action)
+        out = capsys.readouterr().out
+        assert "Collect failed: Avatar" in out
+        mock_check_end.assert_not_called()
+
+def test_process_player_action_collect_none(session):
+    avatar_id = uuid.uuid4()
+    coords = Coordinates(2, 2)
+    avatar = make_avatar_with_id(avatar_id, coords)
+    session.player.avatars = [avatar]
+    action = CollectAction(avatar_id=avatar_id, target_coordinates=coords)
+    with mock.patch.object(avatar, "collect", return_value=None) as mock_collect, \
+         mock.patch.object(session.score_keeper, "record_score") as mock_record_score, \
+         mock.patch.object(session, "_check_game_end") as mock_check_end:
+        session.process_player_action(action)
+        mock_collect.assert_called_once_with(session.grid, session.player)
+        mock_record_score.assert_not_called()
+        mock_check_end.assert_called_once()
+
+def test_process_player_action_avatar_not_found(session, capsys):
+    avatar_id = uuid.uuid4()
+    session.player.avatars = []
+    action = MoveAction(avatar_id=avatar_id, target_coordinates=Coordinates(1, 1))
+    with mock.patch.object(session, "_check_game_end") as mock_check_end:
+        session.process_player_action(action)
+        out = capsys.readouterr().out
+        assert f"Avatar {avatar_id}" in out
+        mock_check_end.assert_not_called()
