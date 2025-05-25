@@ -7,7 +7,6 @@ from ..gameplay.grid import Grid
 from ..gameplay.resources import Resource
 from ..scoring.services import ScoreKeeper
 from ..core.enums import GameStatusEnum, ResourceTypeEnum
-from ..core.models import Coordinates
 from .actions import MoveAction, CollectAction
 from .exceptions import InvalidMoveError
 

@@ -69,7 +69,6 @@ class Avatar:
             Optional[Resource]: The collected resource, or None if no resource was present.
         """
         # Import here to avoid circular import
-        from .player import Player
 
         collected_resource = grid.collect_resource_at(self.position)
         if collected_resource:

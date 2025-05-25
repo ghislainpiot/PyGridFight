@@ -37,7 +37,7 @@ def test_websocket_connect_invalid_session():
             websocket.send_text("should not work")
             websocket.receive_text()
             assert False, "WebSocket should not connect with invalid session"
-    except Exception as e:
+    except Exception:
         # Accept any exception as correct behavior for invalid session
         assert True
 
@@ -52,12 +52,6 @@ def test_websocket_disconnect():
         pass  # Connect and immediately disconnect
     # No assertion needed; if cleanup logic is added, it can be checked here
 from pygridfight.api.connection_manager import ConnectionManager
-from pygridfight.api.schemas import (
-    WebSocketMessageSchema,
-    MoveActionRequestSchema,
-    CollectActionRequestSchema,
-    CoordinatesSchema,
-)
 from pygridfight.core.enums import PlayerActionEnum, ResourceTypeEnum
 
 def test_websocket_sends_initial_state():

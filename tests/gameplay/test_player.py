@@ -1,5 +1,4 @@
 import uuid
-import pytest
 from pygridfight.gameplay.avatar import Avatar
 from pygridfight.gameplay.player import Player
 from pygridfight.core.models import Coordinates

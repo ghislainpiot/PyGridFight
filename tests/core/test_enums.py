@@ -1,4 +1,3 @@
-import pytest
 
 from pygridfight.core.enums import (
     GameStatusEnum,

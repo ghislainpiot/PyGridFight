@@ -1,5 +1,4 @@
 import uuid
-import random
 from unittest import mock
 
 import pytest
@@ -126,7 +125,6 @@ def test_no_victory_condition_leaves_status_in_progress(session, score_keeper):
     assert session.winner is None
 from pygridfight.gameplay.actions import MoveAction, CollectAction
 from pygridfight.gameplay.exceptions import InvalidMoveError
-from pygridfight.core.enums import ResourceTypeEnum
 
 def make_avatar_with_id(avatar_id, position):
     avatar = mock.Mock()

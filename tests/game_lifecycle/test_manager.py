@@ -1,5 +1,5 @@
 import pytest
-from uuid import UUID, uuid4
+from uuid import uuid4
 
 from pygridfight.game_lifecycle.manager import GameLifecycleManager
 from pygridfight.game_lifecycle.exceptions import GameNotFoundError

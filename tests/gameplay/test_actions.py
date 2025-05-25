@@ -1,5 +1,4 @@
 import uuid
-import pytest
 from pygridfight.gameplay.actions import MoveAction, CollectAction
 from pygridfight.core.models import Coordinates
 

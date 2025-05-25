@@ -1,5 +1,4 @@
-import pytest
-from uuid import uuid4, UUID
+from uuid import uuid4
 
 from pygridfight.scoring.services import ScoreKeeper
 

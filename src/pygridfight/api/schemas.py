@@ -4,9 +4,7 @@ from typing import Any, Dict, List, Optional
 from uuid import UUID
 
 from pydantic import BaseModel, Field
-from typing import Literal
 
-from ..core.models import Coordinates
 from ..core.enums import GameStatusEnum, ResourceTypeEnum, PlayerActionEnum
 
 # --- Core Data Schemas ---

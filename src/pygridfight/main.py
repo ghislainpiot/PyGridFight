@@ -1,4 +1,4 @@
-from fastapi import FastAPI, APIRouter, HTTPException
+from fastapi import FastAPI, APIRouter
 from pygridfight.game_lifecycle.manager import GameLifecycleManager
 from pygridfight.api.schemas import (
     CreateGameRequestSchema,
@@ -7,11 +7,8 @@ from pygridfight.api.schemas import (
     AvatarSchema,
     GridSchema,
     CellSchema,
-    ResourceSchema,
-    CoordinatesSchema,
 )
 from pygridfight.gameplay.session import GameSession
-from pygridfight.game_lifecycle.exceptions import GameNotFoundError
 
 from pygridfight.api.connection_manager import ConnectionManager
 

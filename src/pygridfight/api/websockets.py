@@ -8,7 +8,6 @@ from pygridfight.api.schemas import (
     MoveActionRequestSchema,
     CollectActionRequestSchema,
     WebSocketMessageSchema,
-    GameStateSchema,
 )
 from pygridfight.gameplay.actions import MoveAction, CollectAction
 from pygridfight.core.enums import PlayerActionEnum

@@ -1,6 +1,5 @@
 import pytest
-from uuid import UUID, uuid4
-from typing import Any, Dict, List
+from uuid import uuid4
 from pydantic import ValidationError
 
 from pygridfight.api.schemas import (
