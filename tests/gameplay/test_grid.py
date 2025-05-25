@@ -66,4 +66,46 @@ def test_grid_cells_initial_state():
     size = 2
     grid = Grid(size=size)
     for cell in grid.cells.values():
-        assert cell.resource_type is None
+        assert cell.resource is None
+
+def test_spawn_resource_and_collect_resource():
+    if Grid is None:
+        pytest.skip("Grid not implemented yet")
+    from pygridfight.core.enums import ResourceTypeEnum
+    from pygridfight.gameplay.resources import Resource
+
+    grid = Grid(size=3)
+    coords = Coordinates(x=1, y=1)
+    resource = Resource(resource_type=ResourceTypeEnum.ENERGY, value=5)
+
+    # Spawn resource
+    grid.spawn_resource(coords, resource)
+    cell = grid.get_cell(coords)
+    assert cell.resource == resource
+
+    # Collect resource
+    collected = grid.collect_resource_at(coords)
+    assert collected == resource
+    cell_after = grid.get_cell(coords)
+    assert cell_after.resource is None
+
+    # Collect from empty cell returns None
+    assert grid.collect_resource_at(coords) is None
+
+def test_spawn_resource_invalid_coordinates():
+    if Grid is None:
+        pytest.skip("Grid not implemented yet")
+    from pygridfight.core.enums import ResourceTypeEnum
+    from pygridfight.gameplay.resources import Resource
+
+    grid = Grid(size=2)
+    resource = Resource(resource_type=ResourceTypeEnum.GOLD, value=10)
+    with pytest.raises(ValueError):
+        grid.spawn_resource(Coordinates(x=5, y=5), resource)
+
+def test_collect_resource_invalid_coordinates():
+    if Grid is None:
+        pytest.skip("Grid not implemented yet")
+    grid = Grid(size=2)
+    with pytest.raises(ValueError):
+        grid.collect_resource_at(Coordinates(x=-1, y=0))

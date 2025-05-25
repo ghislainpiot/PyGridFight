@@ -1,6 +1,7 @@
-from typing import Dict
+from typing import Dict, Optional
 from pygridfight.core.models import Coordinates
 from pygridfight.gameplay.models import Cell
+from src.pygridfight.gameplay.resources import Resource
 
 class Grid:
     """
@@ -56,3 +57,43 @@ class Grid:
             0 <= coordinates.x < self.size and
             0 <= coordinates.y < self.size
         )
+
+    def spawn_resource(self, coordinates: Coordinates, resource: Resource) -> None:
+        """
+        Place a resource on the cell at the given coordinates.
+
+        Args:
+            coordinates (Coordinates): The coordinates where the resource will be placed.
+            resource (Resource): The resource to place.
+
+        Raises:
+            ValueError: If the coordinates are out of bounds.
+        """
+        if not self.is_valid_coordinates(coordinates):
+            raise ValueError(f"Coordinates {coordinates} are out of bounds for grid size {self.size}.")
+        cell = self.cells[coordinates]
+        new_cell = Cell(coordinates=cell.coordinates, resource=resource)
+        self.cells[coordinates] = new_cell
+
+    def collect_resource_at(self, coordinates: Coordinates) -> Optional[Resource]:
+        """
+        Collect and remove the resource from the cell at the given coordinates.
+
+        Args:
+            coordinates (Coordinates): The coordinates to collect from.
+
+        Returns:
+            Optional[Resource]: The collected resource, or None if no resource was present.
+
+        Raises:
+            ValueError: If the coordinates are out of bounds.
+        """
+        if not self.is_valid_coordinates(coordinates):
+            raise ValueError(f"Coordinates {coordinates} are out of bounds for grid size {self.size}.")
+        cell = self.cells[coordinates]
+        if cell.resource is not None:
+            collected = cell.resource
+            new_cell = Cell(coordinates=cell.coordinates, resource=None)
+            self.cells[coordinates] = new_cell
+            return collected
+        return None
