@@ -1,0 +1,1 @@
+# Init file for game_lifecycle tests package.
