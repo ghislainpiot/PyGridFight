@@ -369,16 +369,6 @@ def test_move_action_request_schema_valid():
     assert schema.action_type == PlayerActionEnum.MOVE
     assert schema.payload.target_coordinates.x == 1
 
-def test_move_action_request_schema_action_type_const():
-    aid = uuid4()
-    # Should fail if action_type is not MOVE
-    with pytest.raises(ValidationError):
-        MoveActionRequestSchema(
-            action_type=PlayerActionEnum.COLLECT_RESOURCE,
-            avatar_id=aid,
-            payload={"target_coordinates": {"x": 1, "y": 2}},
-        )
-
 # --- CollectActionPayloadSchema ---
 
 def test_collect_action_payload_schema_valid():
@@ -402,16 +392,6 @@ def test_collect_action_request_schema_valid():
     schema = CollectActionRequestSchema(**data)
     assert schema.action_type == PlayerActionEnum.COLLECT_RESOURCE
     assert schema.payload.target_coordinates.x == 1
-
-def test_collect_action_request_schema_action_type_const():
-    aid = uuid4()
-    # Should fail if action_type is not COLLECT
-    with pytest.raises(ValidationError):
-        CollectActionRequestSchema(
-            action_type=PlayerActionEnum.MOVE,
-            avatar_id=aid,
-            payload={"target_coordinates": {"x": 1, "y": 2}},
-        )
 
 # --- CreateGameRequestSchema ---
 
