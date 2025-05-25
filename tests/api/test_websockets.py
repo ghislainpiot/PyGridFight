@@ -19,9 +19,15 @@ def test_websocket_connect_valid_session():
         target_score=20
     )
     with client.websocket_connect(f"/ws/game/{session.session_id}") as websocket:
-        websocket.send_text("hello")
-        data = websocket.receive_text()
-        assert data == "Message received: hello"
+        # The server sends an initial game state upon connection
+        data = websocket.receive_json()
+        assert data["type"] == "game_state_update"
+        assert "payload" in data
+        # The original test sent "hello" and expected "Message received: hello"
+        # This is not how the websocket is designed to work. It expects JSON actions.
+        # If testing sending a message, it should be a valid JSON action or
+        # an invalid one to check error handling.
+        # For now, just verifying the initial state reception is sufficient for "connect_valid_session".
 
 def test_websocket_connect_invalid_session():
     invalid_session_id = uuid4()
@@ -52,7 +58,7 @@ from pygridfight.api.schemas import (
     CollectActionRequestSchema,
     CoordinatesSchema,
 )
-from pygridfight.core.enums import PlayerActionEnum
+from pygridfight.core.enums import PlayerActionEnum, ResourceTypeEnum
 
 def test_websocket_sends_initial_state():
     game_manager = app.state.game_manager
@@ -89,12 +95,18 @@ def test_websocket_handle_move_action():
         data = websocket.receive_json()
         assert data["type"] == "game_state_update"
         # Check that avatar position updated
-        found = False
-        for av in data["payload"]["avatars"]:
-            if av["avatar_id"] == str(avatar.avatar_id):
-                found = True
-                assert av["coordinates"]["x"] == 1 and av["coordinates"]["y"] == 1
-        assert found
+        found_avatar_in_payload = False
+        assert "players" in data["payload"], "Payload should contain 'players' list"
+        for player_data in data["payload"]["players"]:
+            assert "avatars" in player_data, "Player data should contain 'avatars' list"
+            for av_payload in player_data["avatars"]:
+                if av_payload["avatar_id"] == str(avatar.avatar_id):
+                    found_avatar_in_payload = True
+                    assert av_payload["position"]["x"] == 1 and av_payload["position"]["y"] == 1
+                    break
+            if found_avatar_in_payload:
+                break
+        assert found_avatar_in_payload, "Moved avatar not found in the correct position in game state update"
 
 def test_websocket_handle_collect_action():
     game_manager = app.state.game_manager
@@ -106,11 +118,15 @@ def test_websocket_handle_collect_action():
     avatar = Avatar(avatar_id=uuid4(), player_id=session.player.player_id, initial_position=Coordinates(x=0, y=0))
     session.player.add_avatar(avatar)
     # Place a resource at (2,2) for collect
-    session.grid.cells[(2,2)].resource = "coin"
+    from pygridfight.gameplay.resources import Resource # Added import
+    session.grid.spawn_resource(
+        Coordinates(x=2, y=2),
+        Resource(resource_type=ResourceTypeEnum.CURRENCY, value=1) # Changed COIN to CURRENCY
+    )
     with client.websocket_connect(f"/ws/game/{session.session_id}") as websocket:
         websocket.receive_json()  # initial state
         collect_payload = {
-            "action_type": PlayerActionEnum.COLLECT.value,
+            "action_type": PlayerActionEnum.COLLECT_RESOURCE.value,
             "avatar_id": str(avatar.avatar_id),
             "payload": {
                 "target_coordinates": {"x": 2, "y": 2}
@@ -185,13 +201,20 @@ def test_websocket_broadcast_to_multiple_clients():
         assert data1["type"] == "game_state_update"
         assert data2["type"] == "game_state_update"
         # Both should see the avatar at (3,3)
-        for data in (data1, data2):
-            found = False
-            for av in data["payload"]["avatars"]:
-                if av["avatar_id"] == str(avatar.avatar_id):
-                    found = True
-                    assert av["coordinates"]["x"] == 3 and av["coordinates"]["y"] == 3
-            assert found
+        for d_idx, current_data in enumerate((data1, data2)):
+            found_avatar_in_payload = False
+            assert "players" in current_data["payload"], f"Payload {d_idx+1} should contain 'players' list"
+            for player_data in current_data["payload"]["players"]:
+                assert "avatars" in player_data, f"Player data in payload {d_idx+1} should contain 'avatars' list"
+                for av_payload in player_data["avatars"]:
+                    if av_payload["avatar_id"] == str(avatar.avatar_id):
+                        found_avatar_in_payload = True
+                        # In AvatarSchema, position is under "position", not "coordinates"
+                        assert av_payload["position"]["x"] == 3 and av_payload["position"]["y"] == 3
+                        break
+                if found_avatar_in_payload:
+                    break
+            assert found_avatar_in_payload, f"Moved avatar not found in correct position in game state update for ws{d_idx+1}"
 
 def test_websocket_disconnect_removes_connection():
     game_manager = app.state.game_manager
@@ -202,9 +225,15 @@ def test_websocket_disconnect_removes_connection():
     )
     connection_manager: ConnectionManager = app.state.connection_manager
     with client.websocket_connect(f"/ws/game/{session.session_id}") as websocket:
-        websocket.receive_json()
+        websocket.receive_json() # Initial state
         assert session.session_id in connection_manager.active_connections
-        assert websocket._ws in connection_manager.active_connections[session.session_id]
-    # After disconnect, should be removed
+        # Check that there is one connection for this session_id
+        assert len(connection_manager.active_connections[session.session_id]) == 1
+        # We can't easily assert that `websocket` (WebSocketTestSession) is the one in the list,
+        # as ConnectionManager stores the raw Starlette WebSocket.
+        # So, we rely on checking the count and the behavior on disconnect.
+
+    # After disconnect (exiting the 'with' block), the connection should be removed.
+    # Either the session_id key is gone, or the list for that session_id is empty.
     assert session.session_id not in connection_manager.active_connections or \
-        websocket._ws not in connection_manager.active_connections.get(session.session_id, [])
+           not connection_manager.active_connections.get(session.session_id)

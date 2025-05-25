@@ -93,9 +93,10 @@ class MoveActionPayloadSchema(BaseModel):
 
 class MoveActionRequestSchema(PlayerActionBaseSchema):
     """Request schema for a move action."""
-    action_type: Literal[PlayerActionEnum.MOVE] = Field(
-        default=PlayerActionEnum.MOVE, frozen=True
-    )
+    # action_type is inherited from PlayerActionBaseSchema and validated by the calling code's if/elif
+    # action_type: Literal[PlayerActionEnum.MOVE] = Field(
+    #     default=PlayerActionEnum.MOVE, frozen=True
+    # ) # This was causing the literal_error as 'data' contains string "MOVE"
     payload: MoveActionPayloadSchema
 
 class CollectActionPayloadSchema(BaseModel):
@@ -104,9 +105,10 @@ class CollectActionPayloadSchema(BaseModel):
 
 class CollectActionRequestSchema(PlayerActionBaseSchema):
     """Request schema for a collect action."""
-    action_type: Literal[PlayerActionEnum.COLLECT_RESOURCE] = Field(
-        default=PlayerActionEnum.COLLECT_RESOURCE, frozen=True
-    )
+    # action_type is inherited from PlayerActionBaseSchema and validated by the calling code's if/elif
+    # action_type: Literal[PlayerActionEnum.COLLECT_RESOURCE] = Field(
+    #     default=PlayerActionEnum.COLLECT_RESOURCE, frozen=True
+    # ) # This was causing the literal_error
     payload: CollectActionPayloadSchema
 
 # --- Request/Response Schemas for Game Lifecycle ---

@@ -1,6 +1,7 @@
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect
 from uuid import UUID
 from pydantic import ValidationError
+from pygridfight.core.models import Coordinates # Add import
 from pygridfight.game_lifecycle.exceptions import GameNotFoundError
 from pygridfight.api.connection_manager import ConnectionManager
 from pygridfight.api.schemas import (
@@ -51,6 +52,7 @@ async def websocket_game_endpoint(websocket: WebSocket, session_id: UUID):
 
         while True:
             data = await websocket.receive_json()
+            print(f"Received WebSocket data: {data}") # Add log
             try:
                 message_type = data.get("action_type")
                 payload = data.get("payload")
@@ -64,13 +66,19 @@ async def websocket_game_endpoint(websocket: WebSocket, session_id: UUID):
                     action_schema = MoveActionRequestSchema(**data)
                     domain_action = MoveAction(
                         avatar_id=action_schema.avatar_id,
-                        target_coordinates=action_schema.payload.target_coordinates
+                        target_coordinates=Coordinates(
+                            x=action_schema.payload.target_coordinates.x,
+                            y=action_schema.payload.target_coordinates.y
+                        )
                     )
-                elif message_type == PlayerActionEnum.COLLECT.value:
+                elif message_type == PlayerActionEnum.COLLECT_RESOURCE.value:
                     action_schema = CollectActionRequestSchema(**data)
                     domain_action = CollectAction(
                         avatar_id=action_schema.avatar_id,
-                        target_coordinates=action_schema.payload.target_coordinates
+                        target_coordinates=Coordinates(
+                            x=action_schema.payload.target_coordinates.x,
+                            y=action_schema.payload.target_coordinates.y
+                        )
                     )
                 else:
                     error_msg = WebSocketMessageSchema(
@@ -94,6 +102,7 @@ async def websocket_game_endpoint(websocket: WebSocket, session_id: UUID):
                     )
 
             except ValidationError as e:
+                print(f"ValidationError in WebSocket: {e.errors()}") # Add log
                 error_msg = WebSocketMessageSchema(
                     type="error",
                     payload={"message": "Invalid action format", "details": e.errors()}
@@ -101,6 +110,7 @@ async def websocket_game_endpoint(websocket: WebSocket, session_id: UUID):
                 from fastapi.encoders import jsonable_encoder
                 await websocket.send_json(jsonable_encoder(error_msg.model_dump()))
             except ValueError as e:
+                print(f"ValueError in WebSocket: {str(e)}") # Add log
                 error_msg = WebSocketMessageSchema(
                     type="error",
                     payload={"message": str(e)}
